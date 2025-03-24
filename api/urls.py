@@ -1,20 +1,25 @@
 from django.urls import path
 from .views import *
 from .admin_views import *
-from .message import * 
+from .message import *
+from .study_material_views import * 
+from .job_views import *
+from .internship_views import *
+from .achievement_views import *
+from .study_material_views import *
+from .exam_views import *
 
 urlpatterns = [
   
     #admin
-    path("/",hello,name="hello"),
     path("admin-signup/", admin_signup, name="admin_signup"),
     path("login/", admin_login, name="admin_login"),
     path("forgot-password/", forgot_password, name="forgot_password"),
     path("reset-password/", reset_password, name="reset_password"),
     path('post-internship/', post_internship, name='post_internship'),
     path('internship/', get_internships, name='get_internships'),
-    path("job_post/", job_post, name="job_post"),
-    path('manage-jobs/', manage_jobs, name='manage_jobs'),
+    path("job_post/", job_post_view, name="job_post"),
+    path('manage-jobs/', manage_jobs_view, name='manage_jobs'),
     path('mailjobs/', get_admin_inbox, name='get_admin_inbox'),
     path('post-study-material/',post_study_material, name="post_study_material"),
     path("manage-internships/", manage_internships, name="manage_internships"),
@@ -26,6 +31,7 @@ urlpatterns = [
     path("get-categories/", get_categories, name="get_categories"),
     path('topics-by-category/', get_topics_by_category, name='get_topics_by_category'),
     path('materials-by-topic/', get_materials_by_topic, name='get_materials_by_topic'),
+    path('applied-students/<str:entity_type>/<str:entity_id>/', get_applied_students, name='get_applied_students'),
     
     #superadmin
     path("superadmin_signup/",super_admin_signup,name= "super_admin_signup"),
@@ -37,7 +43,7 @@ urlpatterns = [
     path("toggle-auto-approval/",toggle_auto_approval, name="toggle_auto_approval"),
     path("get-auto-approval-status/",get_auto_approval_status, name="get_auto_approval_status"),
     path('admin-status/<str:id>/', admin_status_update, name='admin_status_update'),
-    path('get_jobs_with_admin/',get_jobs_with_admin, name="get_jobs_with_admin"),
+    path('get_jobs_with_admin/',get_jobs_with_admin_view, name="get_jobs_with_admin"),
     path("get_achievements_with_admin/", get_achievements_with_admin, name="get_achievements_with_admin"),
     path("get_internships_with_admin/", get_internships_with_admin, name="get_internships_with_admin"),
     path("get_study_materials_with_admin/", get_study_materials_with_admin, name="get_study_materials_with_admin"),
@@ -62,12 +68,12 @@ urlpatterns = [
 
     
     #Jobs
-    path('jobs', get_jobs_for_mail, name='get_jobs_for_mail'),
-    path('upload_job_image/', upload_job_image, name='upload_job_image'),
-    path("review-job/<str:job_id>/", review_job, name="approve_job"),
-    path('job/<str:job_id>/', get_job_by_id, name='get_job_by_id'),
-    path('job-edit/<str:job_id>/', update_job, name='update_job'),
-    path('job-delete/<str:job_id>/', delete_job, name='delete_job'),
+    path('jobs', get_jobs_for_mail_view, name='get_jobs_for_mail'),
+    path('upload_job_image/', upload_job_image_view, name='upload_job_image'),
+    path("review-job/<str:job_id>/", review_job_view, name="approve_job"),
+    path('job/<str:job_id>/', get_job_by_id_view, name='get_job_by_id'),
+    path('job-edit/<str:job_id>/', update_job_view, name='update_job'),
+    path('job-delete/<str:job_id>/', delete_job_view, name='delete_job'),
     path('get-jobs/', get_jobs, name='get_jobs'),
     path('get-items/<str:id>/', get_item, name='get_item'),
     path('submit-feedback/', submit_feedback, name='submit_feedback'),
@@ -107,9 +113,9 @@ urlpatterns = [
     path("profile/<str:userId>/", get_profile, name="get_profile"),
     path('update-profile/<str:userId>/', update_profile, name='update_profile'),
     path('student-forgot-password/', student_forgot_password, name='student_forgot_password'),
-    path('student-verify-otp/', student_verify_otp, name='student_verify_otp'),
+    path('student-verify-otp/', student_verify_One_Time_Password, name='student_verify_otp'),
     path('student-reset-password/', student_reset_password, name='student_reset_password'),
-    path('published-jobs/', get_published_jobs, name='get_published_jobs'),
+    path('published-jobs/', get_published_jobs_view, name='get_published_jobs'),
     path('published-internship/', get_published_internships, name='get_published_internships'),
     # path("contact-us/",contact_us,name="contact-us"),
     path("save-job/<str:pk>/", save_job, name="save-job"),
@@ -135,7 +141,7 @@ urlpatterns = [
     path('admin_reply_message/', admin_reply_message, name='admin_reply_message'),
 
     #test
-    path("test_job_post/", test_job_post, name="test_job_post"),
+    # path("test_job_post/", test_job_post, name="test_job_post"),
 
     #view count
     path('increment-view-count/<str:job_id>/', increment_view_count, name='increment_view_count'),
@@ -147,7 +153,7 @@ urlpatterns = [
     path('review-exam/<str:exam_id>/', review_exam, name='review_exam'),
     path('exam/<str:exam_id>/', get_exam_id, name='get_exam_id'),
     path('exam-delete/<str:exam_id>/', delete_exam, name='delete_exam'),
-    path('exam-edit/', update_exam, name='update_exam'),
+    #path('exam-edit/', update_exam, name='update_exam'),
     path('get_exams_with_admin/', get_exams_with_admin, name='get_exams_with_admin'),
     path("manage-exams/", manage_exams, name="manage_exams"),
     path("save-exam/<str:pk>/", save_exam, name="save-exam"),
@@ -155,15 +161,6 @@ urlpatterns = [
     path("saved-exams/<str:user_id>/", get_saved_exams, name="get-saved-exam"),
     path("exam-edit/<str:exam_id>/", update_exam, name="update_exam"),
     path("delete-exam/<str:exam_id>/", delete_exam, name="delete_exam"),
-    path('apply-exam/', apply_exam, name='apply_exam'),
-    path('confirm-exam/', confirm_exam, name='confirm_exam'),
-    path('applied-exams/<str:userId>/', get_applied_exams, name='get_applied_exams'),
-
-
-
-
-
-
     #bulk signup
     path('bulk-student-signup/', bulk_student_signup, name='bulk_student_signup'),
 

@@ -11,11 +11,10 @@ https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
 from pathlib import Path
-import environ
 import os
 from dotenv import load_dotenv
-
 load_dotenv()
+import environ
 
 # Initialize environ
 env = environ.Env(
@@ -38,7 +37,7 @@ GOOGLE_OAUTH2_CLIENT_SECRET = env('GOOGLE_OAUTH2_CLIENT_SECRET', default='')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -92,6 +91,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'backend.wsgi.application'
 
+APPEND_SLASH = False
 
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
@@ -151,7 +151,9 @@ CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins (frontend and Postman)
 
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials (cookies)
 
-CORS_ALLOWED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+]
 
 CORS_ALLOW_HEADERS = [
     "Content-Type",
@@ -162,12 +164,12 @@ CORS_ALLOW_HEADERS = [
 
 EMAIL_BACKEND = os.getenv("EMAIL_BACKEND")
 EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))  # Convert to int
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"  # Convert to boolean
+EMAIL_PORT = int(os.getenv("EMAIL_PORT"))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS") == "True"
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
- # Change to your admin email
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER 
-
-
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL")
+JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
+MONGO_URI = os.getenv("MONGO_URI")
