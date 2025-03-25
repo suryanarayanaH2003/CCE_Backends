@@ -1,7 +1,7 @@
 ﻿annotated-types==0.7.0
 asgiref==3.8.1
 beautifulsoup4==4.13.3
-cachetools==5.5.0
+cachetools
 certifi==2025.1.31
 cffi==1.17.1
 charset-normalizer==3.4.1
