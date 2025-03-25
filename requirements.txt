@@ -1,7 +1,7 @@
-﻿annotated-types==0.7.0
+annotated-types==0.7.0
 asgiref==3.8.1
 beautifulsoup4==4.13.3
-cachetools
+cachetools>=5.5.0,<6.0
 certifi==2025.1.31
 cffi==1.17.1
 charset-normalizer==3.4.1
@@ -19,7 +19,7 @@ dotenv==0.9.9
 google==3.0.0
 google-ai-generativelanguage==0.6.15
 google-api-core==2.24.1
-google-api-python-client==2.161.0
+google-api-python-client>=2.146.0,<2.162.0  # ✅ Adjusted version
 google-auth==2.38.0
 google-auth-httplib2==0.2.0
 google-generativeai==0.8.4
@@ -30,7 +30,7 @@ gunicorn==20.0.4
 httplib2==0.22.0
 idna==3.10
 numpy==2.2.3
-opencv-python-headless
+opencv-python-headless==4.9.0.80
 packaging==24.2
 pandas==2.2.3
 pillow==11.1.0
@@ -59,6 +59,6 @@ typing_extensions==4.12.2
 tzdata==2025.1
 uritemplate==4.1.1
 urllib3==2.3.0
-django-environ
-bleach
-api.services
+django-environ==0.12.0
+bleach==6.1.0
+api-services==0.1.1
