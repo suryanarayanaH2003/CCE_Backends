@@ -73,11 +73,12 @@ student_users_collection = db[STUDENT_COLLECTION_NAME]  # Assign student collect
 genai.configure(api_key="AIzaSyCLDQgKnO55UQrnFsL2d79fxanIn_AL0WA")
 
 # Configure Tesseract
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD", "/usr/bin/tesseract")
 
 def preprocess_image(image):
     """Preprocesses the image for better OCR accuracy."""
     try:
+        # image = cv2.imread(image)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         return thresh
@@ -97,11 +98,24 @@ def extract_text_from_image(image):
             processed_image[height//2:height, 0:width//2],
             processed_image[height//2:height, width//2:width],
         ]
+        
         extracted_text = [pytesseract.image_to_string(part, lang="eng").strip() for part in parts]
+        final_text = "\n".join(extracted_text).strip()
+
+        if not final_text:  # If text is empty, raise an error
+            raise ValueError("Upload a correct image. No readable text detected.")
+
+        print("Extracted Text:", extracted_text)
+        return final_text
+
+
+        print('text',extracted_text)
         return "\n".join(extracted_text)
     except Exception as e:
         logger.exception("Error extracting text from image")
         raise ValueError("Text extraction failed.  The image may not contain readable text.")
+
+
 
 def analyze_text_with_gemini_api(ocr_text):
     """Processes extracted text into structured job details using the Gemini API."""
@@ -262,6 +276,7 @@ def process_job_image_upload(request):
     if request.method == "POST":
         try:
             uploaded_image = request.FILES.get("image")
+            print('uploaded_image',uploaded_image)
             if not uploaded_image:
                 return json_response({"error": "No image provided"}, status=400)
 

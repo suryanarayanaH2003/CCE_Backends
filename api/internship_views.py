@@ -239,6 +239,9 @@ def upload_internship_image(request):
             # Original synchronous behavior
             image = Image.open(internship_image)
             extracted_text = pytesseract.image_to_string(image, lang="eng")
+            final_text = "\n".join(extracted_text).strip()
+            if not final_text:
+                raise ValueError("Upload a correct image. No readable text detected.")
             internship_data = parse_internship_details(extracted_text)
             
             return JsonResponse({

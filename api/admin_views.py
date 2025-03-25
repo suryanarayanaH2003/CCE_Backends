@@ -135,6 +135,42 @@ def generate_tokens_superadmin(superadmin_user):
     return {"jwt": token}
 
 
+# MongoDB connection
+# Get MongoDB URI from .env file
+MONGO_URI = os.getenv("MONGO_URI")
+print(MONGO_URI)
+# Connect to MongoDB
+client = MongoClient(MONGO_URI)
+db = client['CCE']
+admin_collection = db['admin']
+internship_collection = db['internships']
+job_collection = db['jobs']
+achievement_collection = db['achievement']
+superadmin_collection = db['superadmin']
+student_collection = db['students']
+reviews_collection = db['reviews']
+study_material_collection = db['studyMaterial']
+contactus_collection = db["contact_us"]
+student_achievement_collection=db["student_achievement"]
+message_collection = db["message"]
+exam_collection = db["exam"]
+deleted_job_collection = db['deleted_job'] 
+deleted_internship_collection = db['deleted_internship']
+
+
+# Dictionary to track failed login attempts
+failed_login_attempts = {}
+lockout_duration = timedelta(minutes=2)  # Time to lock out after 3 failed attempts
+
+
+@csrf_exempt
+def hello(request):
+    if request.method == "GET":
+        return JsonResponse({"message": "Hello, World!"})
+    else:
+        return JsonResponse({"error": "Invalid request method"}, status=400)
+
+# Function to check if the password is strong
 def is_strong_password(password):
     """Checks if a password meets complexity requirements.
 
@@ -284,8 +320,9 @@ def admin_login(request):
             email = data.get("email")
             password = data.get("password")
 
-            if "@sns" not in email:
-                return JsonResponse({'error': 'Email must contain domain id'}, status=400)
+            # Allow any suffix after @sns
+            if not re.match(r"^[a-zA-Z0-9._%+-]+@sns[a-zA-Z0-9.-]*\.", email):
+                return JsonResponse({'error': 'Email must contain @sns domain'}, status=400)
 
             if email in FAILED_LOGIN_ATTEMPTS:
                 lockout_data = FAILED_LOGIN_ATTEMPTS[email]
@@ -747,9 +784,9 @@ def super_admin_signup(request):
             email = data.get("email")
             password = data.get("password")
 
-            if "@sns" not in email:
-                return JsonResponse(
-                    {"error": "Email must contain domain id"}, status=400)
+            # Allow any suffix after @sns (e.g., @sns.ac.in, @snsct.org)
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@sns[a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$', email):
+                return JsonResponse({"error": "Email must contain @sns domain"}, status=400)
 
             if superadmin_collection.find_one({'email': email}):
                 return JsonResponse(
@@ -801,8 +838,9 @@ def super_admin_login(request):
             email = data.get("email")
             password = data.get("password")
 
-            if "@sns" not in email:
-                return JsonResponse({'error': 'Email must contain domain id'}, status=400)
+            # Allow any suffix after @sns (e.g., @sns.ac.in, @snsct.org)
+            if not re.match(r'^[a-zA-Z0-9._%+-]+@sns[a-zA-Z0-9.-]*\.[a-zA-Z]{2,}$', email):
+                return JsonResponse({'error': 'Email must contain @sns domain'}, status=400)
 
             if email in FAILED_LOGIN_ATTEMPTS:
                 lockout_data = FAILED_LOGIN_ATTEMPTS[email]
@@ -909,6 +947,322 @@ def superadmin_google_login(request):
             logger.error(f"Google login error: {e}")
             return Response({"error": "An unexpected error occurred"}, status=500)
 
+    
+# ============================================================== JOBS ======================================================================================
+#  Configure Gemini API
+genai.configure(api_key="AIzaSyCLDQgKnO55UQrnFsL2d79fxanIn_AL0WA")
+
+# Configure Tesseract (Ensure Tesseract is installed)
+
+pytesseract.pytesseract.tesseract_cmd = os.getenv("TESSERACT_CMD", "/usr/bin/tesseract")
+
+def preprocess_image(image):
+    """Preprocesses the image for better OCR accuracy."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
+    _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)  # Binarization
+    return thresh
+
+def extract_text_from_image(image_path):
+    """Extracts text by splitting the image into 4 parts and merging results."""
+    image = cv2.imread(image_path)  # Load image
+    processed_image = preprocess_image(image)  # Preprocess
+
+    height, width = processed_image.shape
+    parts = [
+        processed_image[0:height//2, 0:width//2],  # Top Left
+        processed_image[0:height//2, width//2:width],  # Top Right
+        processed_image[height//2:height, 0:width//2],  # Bottom Left
+        processed_image[height//2:height, width//2:width],  # Bottom Right
+    ]
+
+    extracted_text = []
+    
+    for i, part in enumerate(parts):
+        text = pytesseract.image_to_string(part, lang="eng")  # OCR on each part
+        extracted_text.append(text.strip())
+
+    return "\n".join(extracted_text)  # Merge extracted texts
+
+def analyze_text_with_gemini_api(ocr_text):
+
+    """Processes extracted text into a structured paragraph before extracting job details in JSON format."""
+
+    # Step 1: Generate Structured Paragraph from OCR Text
+    initial_prompt = f"""
+    You are an AI assistant specializing in job data extraction.
+    Convert the following unstructured job posting text into a structured, well-formatted paragraph.
+    The paragraph should be organized into subtopics like **Job Title, Company, Description, Responsibilities, Skills, Education, Experience, Salary, Benefits, Work Type, and Application Process**.
+
+    **Unstructured Job Posting:**  
+    {ocr_text}
+
+    **Example Output Format:**  
+    **Job Title:** [Extracted or 'No Data Available']  
+    **Company:** [Extracted or 'No Data Available']  
+    **Description:** [Extracted or 'No Data Available']  
+    **Responsibilities:**  
+    - Responsibility 1  
+    - Responsibility 2 (Infer if missing)  
+    **Required Skills:**  
+    - Skill 1  
+    - Skill 2 (Infer if missing)  
+    **Education:** [Extracted Qualification or 'No Data Available']  
+    **Experience:** [Years of experience required or 'No Data Available']  
+    **Salary:** [Extracted salary or 'No Data Available']  
+    **Benefits:**  
+    - Benefit 1  
+    - Benefit 2 (Infer if missing)  
+    **Work Type:** [Full-time/Part-time/Remote]  
+    **Application Process:** [Extracted Process or 'No Data Available']  
+
+    Ensure the output is well-structured and formatted properly.
+    """
+
+    # Call Gemini AI Model
+    model = genai.GenerativeModel("gemini-1.5-flash-8b")
+    structured_paragraph = model.generate_content(initial_prompt).text
+
+
+    main_prompt = f"""
+    Extract job posting details from the following structured text and return the output in a strict JSON format.
+
+    **Structured Job Posting:**  
+    {structured_paragraph}
+
+
+    **Output Format (Ensure All Fields Exist & Fill Missing Ones)**:
+    {{
+        "title": "Extracted Job Title or 'No Data Available'",
+        "company_name": "Extracted Company Name or 'No Data Available'",
+        "company_overview": "Extracted or 'No Data Available'",
+        "company_website": "Extracted Website or 'No Data Available'",
+        "job_description": "Extracted Job Description or 'No Data Available'",
+        "key_responsibilities": [
+            "Responsibility 1",
+            "Responsibility 2",
+            "Infer if missing"
+        ],
+        "required_skills": [
+            "Skill 1",
+            "Skill 2",
+            "Infer if missing"
+        ],
+        "education_requirements": "Extracted Qualification or 'No Data Available'",
+        "experience_level": "Years of experience required or 'No Data Available'",
+        "salary_range": "Extracted salary or 'No Data Available'",
+        "benefits": [
+            "Benefit 1",
+            "Benefit 2",
+            "Infer if missing"
+        ],
+        "job_location": "Extracted location or 'No Data Available'",
+        "work_type": "Full-time/Part-time (Infer from job type)",
+        "application_instructions": "Extracted Application Process or 'No Data Available'",
+        "application_deadline": "YYYY-MM-DD or 'No Data Available'",
+        "contact_email": "Extracted email or 'No Data Available'",
+        "contact_phone": ["Extracted phone number or 'No Data Available'"],
+        "job_link": "Extracted job link or 'No Data Available'",
+        "selectedCategory": "Job Category (Infer from job type)",
+        "selectedWorkType": "On-site/Remote"
+    }}
+
+    **Ensure output is valid JSON with no additional text.**
+"""
+    # Generate structured job details JSON
+    response = model.generate_content(main_prompt).text
+
+    # Ensure response contains JSON
+    try:
+        # **Clean AI response (remove Markdown formatting)**
+        cleaned_response = re.sub(r"```json|```", "", response.text).strip()
+        json_output = json.loads(cleaned_response)  # Convert to JSON
+
+        # Ensure all required fields have values (fallback to "No Data Available")
+        required_fields = {
+            "title": "No Data Available",
+            "company_name": "No Data Available",
+            "job_link": "No Data Available",
+            "contact_email": "No Data Available",
+            "contact_phone": ["No Data Available"]
+        }
+
+        for key, default_value in required_fields.items():
+            if key not in json_output or not json_output[key]:
+                json_output[key] = default_value
+
+        return json_output
+
+    except json.JSONDecodeError as e:
+        return {"error": "AI processing failed. Please try again."}
+
+@csrf_exempt
+def upload_job_image(request):
+    """Handles job image uploads, extracts text using OCR, and refines it using AI."""
+    if request.method == "POST":
+        try:
+            job_image = request.FILES.get("image")
+            if not job_image:
+                return JsonResponse({"error": "No image provided"}, status=400)
+
+            # Step 1: Extract raw text
+            raw_text = extract_text_from_image(Image.open(job_image))
+
+            # Step 2: Process AI enhancement
+            job_data = analyze_text_with_gemini_api(raw_text)
+            print("Job Data:", job_data)
+
+            if "error" in job_data:
+                return JsonResponse({"error": "AI processing failed. Please try again."}, status=500)
+
+            return JsonResponse({"message": "Text extracted successfully", "data": job_data}, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+    
+    
+logger = logging.getLogger(__name__)
+@csrf_exempt
+def job_post(request):
+    if request.method == 'POST':
+        try:
+            # Check if the request is multipart/form-data
+            # if 'multipart/form-data' in request.headers.get('Content-Type', '').lower():
+                # Extract JSON data from form-data
+            job_data_str = request.POST.get('job_data', '{}')
+            role=request.POST.get('role')
+            user_id=request.POST.get('userId')
+            
+            print(job_data_str,role,user_id)
+            if not job_data_str:
+                return JsonResponse({"error": "Missing job_data field in request"}, status=400)
+
+            try:
+                data = json.loads(job_data_str)
+            except json.JSONDecodeError:
+                return JsonResponse({"error": "Invalid JSON format in job_data"}, status=400)
+
+            logger.info("Extracted data: %s", data)
+
+            # Extract and validate application_deadline
+            application_deadline_str = data.get('application_deadline')
+            logger.info("application_deadline_str: %s", application_deadline_str)
+            
+            if not application_deadline_str:
+                return JsonResponse({"error": "Missing required field: application_deadline"}, status=400)
+            
+            # Handle date string (could be "2025-03-21" or "2025-03-21T00:00:00.000Z")
+            def parse_date(date_str):
+                if not date_str:
+                    return None
+                try:
+                    if 'T' in date_str:
+                        date_str = date_str.split('T')[0]
+                    return datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=pytz.utc)
+                except ValueError:
+                    return None
+
+            application_deadline = parse_date(application_deadline_str)
+            if not application_deadline:
+                return JsonResponse({"error": "Invalid date format for application_deadline. Use YYYY-MM-DD."}, status=400)
+            
+            # Handle other date fields similarly
+            job_posting_date = parse_date(data.get('job_posting_date'))
+            interview_start_date = parse_date(data.get('interview_start_date'))
+            interview_end_date = parse_date(data.get('interview_end_date'))
+            expected_joining_date = parse_date(data.get('expected_joining_date'))
+
+            # Check current status based on deadline
+            now = timezone.now()
+            current_status = "Active" if application_deadline >= now else "Expired"
+            
+            # Validate required fields
+            required_fields = ['title', 'job_link', 'application_deadline', 'company_name']
+            missing_fields = [field for field in required_fields if field not in data or not data[field]]
+            if missing_fields:
+                return JsonResponse({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=400)
+            
+            # Handle image file (only applicable for multipart/form-data requests)
+            image = request.FILES.get('image')
+            image_base64 = None
+            if image:
+                try:
+                    image_base64 = base64.b64encode(image.read()).decode('utf-8')
+                except Exception as e:
+                    logger.error("Error processing image: %s", str(e))
+                    return JsonResponse({"error": "Error processing image file"}, status=400)
+            
+            # Extract role and userId
+            
+
+            # Check auto-approval setting from superadmin_collection (MongoDB)
+            auto_approval_setting = superadmin_collection.find_one({"key": "auto_approval"})
+            is_auto_approval = auto_approval_setting.get("value", False) if auto_approval_setting else False
+            is_publish = True if role == 'superadmin' or (role == 'admin' and is_auto_approval) else None
+            
+            # Prepare job post data
+            job_post = {
+                "job_data": {
+                    # JobDetails Section (9 fields)
+                    "title": data.get('title'),
+                    "job_description": data.get('job_description', ""),
+                    "experience_level": data.get('experience_level', ""),
+                    "industry_type": data.get('industry_type', ""),
+                    "work_type": data.get('work_type', ""),
+                    "company_name": data.get('company_name'),
+                    "company_website": data.get('company_website', ""),
+                    "job_location": data.get('job_location', ""),
+                    "salary_range": data.get('salary_range', ""),
+
+                    # Requirement Section (9 fields)
+                    "education_requirements": data.get('education_requirements', ""),
+                    "work_experience_requirement": data.get('work_experience_requirement', ""),
+                    "professional_certifications": data.get('professional_certifications', ""),
+                    "minimum_marks_requirement": data.get('minimum_marks_requirement', ""),
+                    "technical_skills": data.get('technical_skills', []), 
+                    "soft_skills": data.get('soft_skills', []), 
+                    "age_limit": data.get('age_limit', ""),
+                    "documents_required": data.get('documents_required', ""),
+                    "additional_skills": data.get('additional_skills', []),
+
+                    # ApplicationProcess Section (7 fields)
+                    "job_posting_date": job_posting_date.isoformat() if job_posting_date else None,
+                    "application_deadline": application_deadline.isoformat(),
+                    "interview_start_date": interview_start_date.isoformat() if interview_start_date else None,
+                    "interview_end_date": interview_end_date.isoformat() if interview_end_date else None,
+                    "job_link": data.get('job_link'),
+                    "selection_process": data.get('selection_process', ""),
+                    "steps_to_apply": data.get('steps_to_apply', ""),
+
+                    # OtherInstructions Section (6 fields)
+                    "relocation_assistance": data.get('relocation_assistance', ""),
+                    "remote_work_availability": data.get('remote_work_availability', ""),
+                    "expected_joining_date": expected_joining_date.isoformat() if expected_joining_date else None,
+                    "work_schedule": data.get('work_schedule', ""),
+                    "key_responsibilities": data.get('key_responsibilities', []), 
+                    "preparation_tips": data.get('preparation_tips', ""),
+
+                    # Additional field for image (optional)
+                    "image": image_base64
+                },
+                **{f"{role}_id": user_id},  # e.g., admin_id or superadmin_id
+                "is_publish": is_publish,
+                "status": current_status,
+                "updated_at": timezone.now().isoformat()
+            }
+            
+            # Insert into MongoDB collection
+            job_collection.insert_one(job_post)
+            return JsonResponse({"message": "Job posted successfully, awaiting approval."}, status=200)
+        
+        except Exception as e:
+            logger.error("Error: %s", str(e))
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    return JsonResponse({"error": "Invalid request method. Only POST is allowed."}, status=405)
+
+
 @csrf_exempt
 @api_view(["POST"])
 def toggle_auto_approval(request):
@@ -958,6 +1312,9 @@ def get_auto_approval_status(request):
         return JsonResponse({"is_auto_approval": is_auto_approval}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method. Only POST is allowed."}, status=405)
+
 
 @csrf_exempt
 def get_all_jobs_and_internships(request):

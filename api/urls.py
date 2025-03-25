@@ -12,6 +12,7 @@ from .exam_views import *
 urlpatterns = [
   
     #admin
+    path("",hello,name="hello"),
     path("admin-signup/", admin_signup, name="admin_signup"),
     path("login/", admin_login, name="admin_login"),
     path("forgot-password/", forgot_password, name="forgot_password"),
@@ -161,6 +162,15 @@ urlpatterns = [
     path("saved-exams/<str:user_id>/", get_saved_exams, name="get-saved-exam"),
     path("exam-edit/<str:exam_id>/", update_exam, name="update_exam"),
     path("delete-exam/<str:exam_id>/", delete_exam, name="delete_exam"),
+    path('apply-exam/', apply_exam, name='apply_exam1'),
+    path('confirm-exam/', confirm_exam, name='confirm_exam1'),
+    path('applied-exams/<str:userId>/', get_applied_exams, name='get_applied_exams1'),
+
+
+
+
+
+
     #bulk signup
     path('bulk-student-signup/', bulk_student_signup, name='bulk_student_signup'),
 

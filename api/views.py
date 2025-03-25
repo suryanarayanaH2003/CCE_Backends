@@ -241,9 +241,9 @@ def student_signup(request):
                     return JsonResponse({"error": "Invalid email format."}, status=400)
 
                 # Check if the email belongs to the college domain
-                if not re.match(r"^[a-zA-Z0-9._%+-]+@sns\.[a-zA-Z]{2,}$", email):
+                if not re.match(r"^[a-zA-Z0-9._%+-]+@sns[a-zA-Z0-9.-]*\.", email):
                     return JsonResponse(
-                        {"error": "Please enter a valid SNS college email (e.g., example@sns.ac.in)."}, status=400
+                        {"error": "Please enter a valid SNS email (e.g., example@sns.edu.in)."}, status=400
                     )
 
             # Check if the email already exists
@@ -327,8 +327,8 @@ def bulk_student_signup(request):
                         errors.append({"row": index + 2, "error": f"Missing fields: {', '.join(missing_fields)}"})
                         continue
 
-                    if "@sns" not in row['email']:
-                        errors.append({"row": index + 2, "error": "Invalid email format. Must be an @sns email."})
+                    if not re.match(r"^[a-zA-Z0-9._%+-]+@sns[a-zA-Z0-9.-]*\.", row['email']):
+                        errors.append({"row": index + 2, "error": "Invalid email format. Must be an @sns email (e.g., example@sns.edu.in)."})
                         continue
 
                     if row['year'] not in valid_years:
@@ -1665,3 +1665,55 @@ def get_applied_internships(request, userId):
     except Exception as e:
         logger.error(f"Error fetching applied internships: {str(e)}")
         return JsonResponse({"error": str(e)}, status=400)
+
+
+@csrf_exempt
+def increment_view_count(request, job_id):
+    if request.method == "POST":
+        try:
+            # Parse the request payload to get the student's ObjectId
+            data = json.loads(request.body)
+            student_id = data.get('student_id')
+
+            if not student_id:
+                return JsonResponse({'error': 'Student ID is required'}, status=400)
+
+            # Find the job, internship, or exam by ID in respective collections
+            job = job_collection.find_one({"_id": ObjectId(job_id)})
+            internship = internship_collection.find_one({"_id": ObjectId(job_id)})
+            exam = exam_collection.find_one({"_id": ObjectId(job_id)})
+
+            if job:
+                # Update the views array for a job
+                if student_id not in job.get('views', []):
+                    job_collection.update_one(
+                        {"_id": ObjectId(job_id)},
+                        {"$addToSet": {"views": str(ObjectId(student_id))}}
+                    )
+                return JsonResponse({'message': 'View count incremented successfully for job'}, status=200)
+
+            elif internship:
+                # Update the views array for an internship
+                if student_id not in internship.get('views', []):
+                    internship_collection.update_one(
+                        {"_id": ObjectId(job_id)},
+                        {"$addToSet": {"views": str(ObjectId(student_id))}}
+                    )
+                return JsonResponse({'message': 'View count incremented successfully for internship'}, status=200)
+
+            elif exam:
+                # Update the views array for an exam
+                if student_id not in exam.get('views', []):
+                    exam_collection.update_one(
+                        {"_id": ObjectId(job_id)},
+                        {"$addToSet": {"views": str(ObjectId(student_id))}}
+                    )
+                return JsonResponse({'message': 'View count incremented successfully for exam'}, status=200)
+
+            else:
+                return JsonResponse({'error': 'Job, internship, or exam not found'}, status=404)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    else:
+        return JsonResponse({'error': 'Invalid request method'}, status=400)

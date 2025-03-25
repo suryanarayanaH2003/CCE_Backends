@@ -15,6 +15,10 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 import environ
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Initialize environ
 env = environ.Env(
