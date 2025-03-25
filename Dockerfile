@@ -17,9 +17,9 @@ RUN apt-get update \
 
 # Copy project files
 COPY . .
-
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Set the Tesseract path inside the container
 ENV TESSERACT_CMD=/usr/bin/tesseract
