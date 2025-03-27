@@ -25,5 +25,4 @@ ENV TESSERACT_CMD=/usr/bin/tesseract
 EXPOSE 8000
 
 # Start Gunicorn (properly set CMD)
-CMD ["gunicorn", "--bind=0.0.0.0:8000", "backend.wsgi:application", 
-     "--log-level=debug", "--access-logfile=access.log", "--error-logfile=error.log"]
+CMD ["gunicorn", "--bind=0.0.0.0:8000", "backend.wsgi:application"]
