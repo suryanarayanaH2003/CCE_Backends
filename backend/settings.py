@@ -151,7 +151,12 @@ CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins (frontend and Postman)
 
 CORS_ALLOW_CREDENTIALS = True  # Allow credentials (cookies)
 
-CORS_ALLOWED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGINS = [
+    "https://cce-frontends-hkaf.vercel.app",  # Your deployed frontend
+    "http://localhost:5173",# Vite's default development server
+]
+
+
 
 CORS_ALLOW_HEADERS = [
     "Content-Type",
