@@ -6,7 +6,7 @@ from .message import *
 urlpatterns = [
   
     #admin
-    path("/",hello,name="hello"),
+    path("hello/",hello,name="hello"),
     path("admin-signup/", admin_signup, name="admin_signup"),
     path("login/", admin_login, name="admin_login"),
     path("forgot-password/", forgot_password, name="forgot_password"),
