@@ -27,10 +27,10 @@ from django.conf import settings
 JWT_SECRET = os.environ.get("JWT_SECRET", "secret")
 JWT_ALGORITHM = "HS256"
 DATABASE_URL = os.environ.get(
-    "DATABASE_URL", 'mongodb+srv://ihub:ihub@cce.ksniz.mongodb.net/')
+    "MONGO_URI")
 DATABASE_NAME = "CCE"
-
-client = MongoClient(DATABASE_URL)
+MONGODB_TIMEOUT_MS = os.environ.get("MONGODB_TIMEOUT_MS")
+client = MongoClient(DATABASE_URL,serverSelectionTimeoutMS=MONGODB_TIMEOUT_MS)
 db = client[DATABASE_NAME]
 
 EXAM_COLLECTION_NAME = "exam"

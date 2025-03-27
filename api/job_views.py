@@ -45,8 +45,9 @@ load_dotenv()
 JWT_SECRET = os.environ.get("JWT_SECRET", "secret")
 JWT_ALGORITHM = "HS256"
 DATABASE_URL = os.environ.get(
-    "DATABASE_URL", 'mongodb+srv://ihub:ihub@cce.ksniz.mongodb.net/')
+    "MONGO_URI")
 DATABASE_NAME = "CCE"
+MONGODB_TIMEOUT_MS = os.environ.get("MONGODB_TIMEOUT_MS")  # 30 seconds
 ADMIN_USERS_COLLECTION_NAME = "admin"
 INTERNSHIP_POSTINGS_COLLECTION_NAME = "internships"
 JOB_POSTINGS_COLLECTION_NAME = "jobs"
@@ -59,7 +60,7 @@ STUDENT_COLLECTION_NAME = 'student'  # Added student collection
 logger = logging.getLogger(__name__)
 
 # MongoDB connection setup
-client = MongoClient(DATABASE_URL)
+client = MongoClient(DATABASE_URL,serverSelectionTimeoutMS=MONGODB_TIMEOUT_MS)
 db = client[DATABASE_NAME]
 admin_users_collection = db[ADMIN_USERS_COLLECTION_NAME]
 internship_postings_collection = db[INTERNSHIP_POSTINGS_COLLECTION_NAME]

@@ -17,7 +17,9 @@ JWT_SECRET = os.environ.get("JWT_SECRET", "secret")
 JWT_ALGORITHM = "HS256"
 
 # MongoDB Configuration
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://ihub:ihub@cce.ksniz.mongodb.net/")
+MONGO_URI = os.environ.get("MONGO_URI")
+MONGODB_TIMEOUT_MS = os.environ.get("MONGODB_TIMEOUT_MS")
+
 DATABASE_NAME = "CCE"
 MESSAGE_COLLECTION_NAME = "message"
 
@@ -36,7 +38,7 @@ def get_message_collection():
     global _mongo_client, _message_collection
     try:
         if _mongo_client is None:
-            _mongo_client = MongoClient(MONGO_URI)
+            _mongo_client = MongoClient(MONGO_URI,serverSelectionTimeoutMS=MONGODB_TIMEOUT_MS)
             _message_collection = _mongo_client[DATABASE_NAME][MESSAGE_COLLECTION_NAME]
         # Check if the connection is still alive by performing a simple operation
         _mongo_client.admin.command('ping')

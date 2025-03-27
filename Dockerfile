@@ -28,5 +28,4 @@ ENV TESSERACT_CMD=/usr/bin/tesseract
 EXPOSE 8000
 
 # Run the Django server
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi:application"]
-
+CMD ["gunicorn", "--workers", "2", "--bind", "0.0.0.0:8000", "backend.wsgi:application","--timeout", "60"]

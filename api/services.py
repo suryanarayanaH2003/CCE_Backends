@@ -2,7 +2,7 @@
 import random
 import string
 from datetime import datetime, timedelta
-
+import os
 # Django Imports
 from django.core.mail import send_mail
 from django.conf import settings
@@ -12,7 +12,11 @@ from django.contrib.auth.hashers import make_password
 from pymongo import MongoClient
 
 # Assuming student_collection is your MongoDB collection
-client = MongoClient(settings.MONGO_URI)
+MONGO_URI=os.environ.get('MONGO_URI')
+print(MONGO_URI)
+MONGODB_TIMEOUT_MS = os.environ.get("MONGODB_TIMEOUT_MS")
+client = MongoClient(MONGO_URI,serverSelectionTimeoutMS=MONGODB_TIMEOUT_MS)
+
 db = client["CCE"]
 student_collection = db["students"]
 

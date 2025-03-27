@@ -80,9 +80,12 @@ def generate_tokens(student_user):
     token = jwt.encode(access_payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
     return {"jwt": token}
 
+MONGO_URI=os.environ.get('MONGO_URI')
+MONGODB_TIMEOUT_MS = os.environ.get("MONGODB_TIMEOUT_MS")
 
 # MongoDB connection
-client = MongoClient(settings.MONGO_URI)
+client = MongoClient(MONGO_URI,serverSelectionTimeoutMS=MONGODB_TIMEOUT_MS)
+print('client',client)
 db = client["CCE"]
 student_collection = db["students"]
 superadmin_collection = db["superadmin"]

@@ -52,7 +52,8 @@ load_dotenv()
 JWT_SECRET = os.environ.get("JWT_SECRET", "secret")
 JWT_ALGORITHM = "HS256"
 DATABASE_URL = os.environ.get(
-    "DATABASE_URL", 'mongodb+srv://ihub:ihub@cce.ksniz.mongodb.net/')
+    "MONGO_URI")
+MONGODB_TIMEOUT_MS = os.environ.get("MONGODB_TIMEOUT_MS")
 DATABASE_NAME = "CCE"
 ADMIN_COLLECTION_NAME = "admin"
 INTERNSHIP_COLLECTION_NAME = "internships"
@@ -73,7 +74,7 @@ DELETED_INTERNSHIP_COLLECTION_NAME = 'deleted_internship'
 logger = logging.getLogger(__name__)
 
 # MongoDB connection setup
-client = MongoClient(DATABASE_URL)
+client = MongoClient(DATABASE_URL,serverSelectionTimeoutMS=MONGODB_TIMEOUT_MS)
 db = client[DATABASE_NAME]
 admin_collection = db[ADMIN_COLLECTION_NAME]
 internship_collection = db[INTERNSHIP_COLLECTION_NAME]
@@ -134,28 +135,6 @@ def generate_tokens_superadmin(superadmin_user):
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return {"jwt": token}
 
-
-# MongoDB connection
-# Get MongoDB URI from .env file
-MONGO_URI = os.getenv("MONGO_URI")
-print(MONGO_URI)
-# Connect to MongoDB
-client = MongoClient(MONGO_URI)
-db = client['CCE']
-admin_collection = db['admin']
-internship_collection = db['internships']
-job_collection = db['jobs']
-achievement_collection = db['achievement']
-superadmin_collection = db['superadmin']
-student_collection = db['students']
-reviews_collection = db['reviews']
-study_material_collection = db['studyMaterial']
-contactus_collection = db["contact_us"]
-student_achievement_collection=db["student_achievement"]
-message_collection = db["message"]
-exam_collection = db["exam"]
-deleted_job_collection = db['deleted_job'] 
-deleted_internship_collection = db['deleted_internship']
 
 
 # Dictionary to track failed login attempts

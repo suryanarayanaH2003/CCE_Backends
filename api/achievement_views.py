@@ -12,11 +12,11 @@ import functools
 import logging
 
 DATABASE_URL = os.environ.get(
-    "DATABASE_URL", 'mongodb+srv://ihub:ihub@cce.ksniz.mongodb.net/')
+    "MONGO_URI")
 DATABASE_NAME = "CCE"
-client = MongoClient(DATABASE_URL)
+client = MongoClient(DATABASE_URL,serverSelectionTimeoutMS=MONGODB_TIMEOUT_MS)
 db = client[DATABASE_NAME]
-
+MONGODB_TIMEOUT_MS = os.environ.get("MONGODB_TIMEOUT_MS")
 ACHIEVEMENT_COLLECTION_NAME = "achievement"
 achievement_collection = db[ACHIEVEMENT_COLLECTION_NAME]
 
