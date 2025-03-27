@@ -9,10 +9,7 @@ import threading
 import queue
 import time
 import functools
-from io import BytesIO
 import logging
-from PIL import Image
-from django.core.files.uploadedfile import InMemoryUploadedFile
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL", 'mongodb+srv://ihub:ihub@cce.ksniz.mongodb.net/')
@@ -103,44 +100,9 @@ def async_task(func):
         task_queue.put((task_id, func, args, kwargs))
         return task_id
     return wrapper
-
-def optimize_image(image, max_size=(800, 800), quality=75):  # Add quality parameter
-    """Optimizes an image using Pillow.
-
-    Args:
-        image (InMemoryUploadedFile): The image to optimize.
-        max_size (tuple): The maximum width and height of the image.
-        quality (int): JPEG quality level (0-100).
-
-    Returns:
-        InMemoryUploadedFile: The optimized image.
-    """
-    try:
-        img = Image.open(image)
-        img = img.convert("RGB") # Convert to RGB to handle transparency (PNGs)
-
-        # Resize the image (optional)
-        img.thumbnail(max_size)
-
-        img_io = BytesIO()
-        img.save(img_io, 'JPEG', quality=quality)  # Use JPEG for compression
-
-        new_image = InMemoryUploadedFile(
-            img_io,
-            None,
-            image.name.split('.')[0] + '.jpg', # Ensure JPEG extension
-            'image/jpeg',
-            img_io.tell(),
-            None
-        )
-        return new_image
-    except Exception as e:
-        async_logger.error(f"Error optimizing image: {str(e)}")
-        return image  # Return the original image if optimization fails
-
 @csrf_exempt
 def post_achievement(request):
-    """Posts a new achievement to the database with image optimization.
+    """Posts a new achievement to the database with image handling.
 
     Args:
         request (HttpRequest): The HTTP request object containing achievement data.
@@ -199,8 +161,7 @@ def post_achievement(request):
         image_base64 = None
         if image:
             try:
-                optimized_image = optimize_image(image)
-                image_base64 = base64.b64encode(optimized_image.read()).decode('utf-8')
+                image_base64 = base64.b64encode(image.read()).decode('utf-8')
             except Exception as e:
                 async_logger.error(f"Error processing image: {str(e)}")
                 return JsonResponse({"error": "Error processing image file"}, status=400)
@@ -228,7 +189,7 @@ def post_achievement(request):
             status=201)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
+    
 @csrf_exempt
 def manage_achievements(request):
     """Retrieves achievements based on the admin user's ID.
@@ -294,15 +255,13 @@ def update_achievement(request, achievement_id):
     try:
         data = json.loads(request.body)
 
-         # Handle image upload
-        image = request.FILES.get("photo")  # Changed to request.FILES.get
-
+        # Handle image upload
+        image = request.FILES.get("photo")
         image_base64 = None
 
         if image:
             try:
-                optimized_image = optimize_image(image)
-                image_base64 = base64.b64encode(optimized_image.read()).decode('utf-8')
+                image_base64 = base64.b64encode(image.read()).decode('utf-8')
             except Exception as e:
                 async_logger.error(f"Error processing image: {str(e)}")
                 return JsonResponse({"error": "Error processing image file"}, status=400)
@@ -332,7 +291,7 @@ def update_achievement(request, achievement_id):
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
-
+    
 @csrf_exempt
 def get_achievements(request):
     """Retrieves all achievements from the database.

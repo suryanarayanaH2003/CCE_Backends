@@ -1313,8 +1313,6 @@ def get_auto_approval_status(request):
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
-    return JsonResponse({"error": "Invalid request method. Only POST is allowed."}, status=405)
-
 
 @csrf_exempt
 def get_all_jobs_and_internships(request):

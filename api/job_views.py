@@ -313,6 +313,21 @@ def create_job_posting(request):
             except json.JSONDecodeError:
                 return json_response({"error": "Invalid job data format"}, status=400)
 
+            # Update required fields to match frontend
+            required_fields = [
+                'title',
+                'job_description',
+                'company_name',
+                'job_location',
+                'company_website',
+                'application_deadline',
+                'job_link'
+            ]
+            
+            missing_fields = [field for field in required_fields if field not in data or not data[field]]
+            if missing_fields:
+                return json_response({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=400)
+
             application_deadline_str = data.get('application_deadline')
             if not application_deadline_str:
                 return json_response({"error": "Missing application deadline"}, status=400)
@@ -328,11 +343,6 @@ def create_job_posting(request):
 
             now = timezone.now()
             current_status = "Active" if application_deadline >= now else "Expired"
-
-            required_fields = ['title', 'job_link', 'application_deadline', 'company_name']
-            missing_fields = [field for field in required_fields if field not in data or not data[field]]
-            if missing_fields:
-                return json_response({"error": f"Missing required fields"}, status=400)
 
             image = request.FILES.get('image')
             image_base64 = None

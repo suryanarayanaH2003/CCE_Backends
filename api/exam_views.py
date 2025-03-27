@@ -191,6 +191,7 @@ def create_exam_post_async(data, role, user_id, image_base64=None):
         exam_post = {
             "exam_data": {
                 "exam_title": data['exam_title'],
+                "exam_link": data.get('exam_link', ""),
                 "about_exam": data.get('about_exam', ""),
                 "exam_highlights": highlights_dict,
                 "eligibility_criteria": data.get('eligibility_criteria', ""),
@@ -198,6 +199,7 @@ def create_exam_post_async(data, role, user_id, image_base64=None):
                 "documents_required": data.get('documents_required', ""),
                 "exam_centers": data.get('exam_centers', ""),
                 "exam_pattern": data.get('exam_pattern', ""),
+                "organization" : data.get('organization', ""),  
                 "mock_test": data.get('mock_test', ""),
                 "admit_card": data.get('admit_card', ""),
                 "preparation_tips": data.get('preparation_tips', ""),
@@ -263,7 +265,7 @@ def exam_post(request):
             return JsonResponse({"error": "Invalid JSON format in exam_data"}, status=400)
 
         # Validate required fields
-        required_fields = ['exam_title', 'application_process', 'exam_highlights', 'documents_required', 'cutoff', 'application_deadline']
+        required_fields = ['exam_title', 'exam_link', 'application_deadline']
         missing_fields = [field for field in required_fields if field not in data or not data[field]]
         if missing_fields:
             return JsonResponse({"error": f"Missing required fields: {', '.join(missing_fields)}"}, status=400)
@@ -338,6 +340,7 @@ def exam_post(request):
             exam_post = {
                 "exam_data": {
                     "exam_title": data['exam_title'],
+                    "exam_link": data.get('exam_link', ""),
                     "about_exam": data.get('about_exam', ""),
                     "exam_highlights": highlights_dict,
                     "eligibility_criteria": data.get('eligibility_criteria', ""),
@@ -345,6 +348,7 @@ def exam_post(request):
                     "documents_required": data.get('documents_required', ""),
                     "exam_centers": data.get('exam_centers', ""),
                     "exam_pattern": data.get('exam_pattern', ""),
+                    "organization" : data.get('organization', ""),
                     "mock_test": data.get('mock_test', ""),
                     "admit_card": data.get('admit_card', ""),
                     "preparation_tips": data.get('preparation_tips', ""),
