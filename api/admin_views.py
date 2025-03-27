@@ -1283,36 +1283,43 @@ def get_published_jobs(request):
     """
     Fetch all jobs with is_publish set to True (Approved).
     """
+    if request.method != "GET":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
+    
     try:
         job_list = []
         published_jobs = job_collection.find({"is_publish": True})  # Ensures only approved jobs are fetched
+        
+        excluded_fields = {
+            "technical_skills",
+            "soft_skills",
+            "selection_process",
+            "work_experience_requirement",
+            "professional_certifications",
+            "minimum_marks_requirement",
+            "additional_skills",
+            "key_responsibilities",
+            "work_schedule",
+        }
+        
         for job in published_jobs:
             job["_id"] = str(job["_id"])  # Convert ObjectId to string
+            
+            job_data = job.get("job_data", {})
+            
             # Rename 'job_location' to 'location' if it exists
-            if "job_data" in job and "job_location" in job["job_data"]:
-                job["job_data"]["location"] = job["job_data"].pop("job_location")
-
-            if "job_data" in job:
-                excluded_fields = [
-                    "technical_skills",
-                    "soft_skills",
-                    "selection_process",
-                    "work_experience_requirement",
-                    "professional_certifications",
-                    "minimum_marks_requirement",
-                    "additional_skills",
-                    "key_responsibilities",
-                    "work_schedule",
-                ]
-                for field in excluded_fields:
-                    job["job_data"].pop(field, None)
-                    
-            # Calculate total views
-            total_views = len(job.get("views", []))
-            # Remove views field and add total_views
-            job.pop("views", None)
-            job["views"] = total_views
+            if "job_location" in job_data:
+                job_data["location"] = job_data.pop("job_location")
+            
+            # Remove excluded fields
+            for field in excluded_fields:
+                job_data.pop(field, None)
+            
+            # Calculate total views and replace views list with count
+            job["views"] = len(job.get("views", []))
+            
             job_list.append(job)
+        
         return JsonResponse({"jobs": job_list}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
