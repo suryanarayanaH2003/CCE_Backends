@@ -698,8 +698,15 @@ def manage_jobs_by_admin_user(request):
                 return json_response({"error": "Invalid token"}, status=401)
 
             query = {"admin_id": admin_user} if role == "admin" else {}
-            jobs = job_postings_collection.find(query).limit(50) # Limit results for performance
-            job_list = [{**job, "_id": str(job["_id"])} for job in jobs]
+            
+            jobs = job_postings_collection.find(query).limit(50)  # Limit results for performance
+
+            # Exclude the image field from the response
+            job_list = []
+            for job in jobs:
+                job_dict = {**job, "_id": str(job["_id"]), "views": len(job.get("views", []))}
+                job_dict.pop("image", None)  # Remove the 'image' field if it exists
+                job_list.append(job_dict)
 
             return json_response({"jobs": job_list}, status=200)
 
@@ -712,6 +719,7 @@ def manage_jobs_by_admin_user(request):
             return json_response({'error': 'Failed to retrieve jobs.'}, status=500)
     else:
         return json_response({'error': 'Invalid request method'}, status=405)
+
 
 def retrieve_jobs_with_admin_info():
     """

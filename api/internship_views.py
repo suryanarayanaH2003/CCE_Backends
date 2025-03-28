@@ -540,7 +540,9 @@ def manage_internships(request):
         internship_list = []
         for internship in internships:
             internship["_id"] = str(internship["_id"])
+            internship["views"] = len(internship.get("views", []))  # Add views count
             internship_list.append(internship)
+
 
         return JsonResponse({"internships": internship_list}, status=200)
 

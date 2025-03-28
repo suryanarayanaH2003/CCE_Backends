@@ -484,7 +484,7 @@ def student_login(request):
                 student_id = student_user.get("_id")
                 tokens = generate_tokens(student_id)
                 return JsonResponse(
-                    {"username": student_user["name"], "token": tokens}, status=200
+                    {"username": student_user["name"], "token": tokens, "email":student_user["email"]}, status=200
                 )
             else:
                 # Track failed attempts
@@ -551,6 +551,7 @@ def student_google_login(request):
             response = {
                 "username": student_user["name"],
                 "token": tokens,
+                "email": student_user["email"],
             }
              
             return JsonResponse(response, status=200, safe=False)  

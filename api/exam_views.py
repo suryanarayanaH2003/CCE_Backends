@@ -847,7 +847,11 @@ def manage_exams(request):
 
             # Fetch exams from MongoDB based on admin_user
             exams = exam_collection.find({"admin_id": admin_user} if role == "admin" else {})
-            exam_list = [{**exam, "_id": str(exam["_id"])} for exam in exams]
+            exam_list = []
+            for exam in exams:
+                exam["_id"] = str(exam["_id"])
+                exam["views"] = len(exam.get("views", []))  # Add views count
+                exam_list.append(exam)
 
             return JsonResponse({"exams": exam_list}, status=200)
 

@@ -136,6 +136,28 @@ def generate_tokens_superadmin(superadmin_user):
     return {"jwt": token}
 
 
+# MongoDB connection
+# Get MongoDB URI from .env file
+MONGO_URI = os.getenv("MONGO_URI")
+print(MONGO_URI)
+# Connect to MongoDB
+client = MongoClient(MONGO_URI)
+db = client['CCE']
+admin_collection = db['admin']
+internship_collection = db['internships']
+job_collection = db['jobs']
+achievement_collection = db['achievement']
+superadmin_collection = db['superadmin']
+student_collection = db['students']
+reviews_collection = db['reviews']
+study_material_collection = db['studyMaterial']
+contactus_collection = db["contact_us"]
+student_achievement_collection=db["student_achievement"]
+message_collection = db["message"]
+exam_collection = db["exam"]
+deleted_job_collection = db['deleted_job'] 
+deleted_internship_collection = db['deleted_internship']
+
 
 # Dictionary to track failed login attempts
 failed_login_attempts = {}
